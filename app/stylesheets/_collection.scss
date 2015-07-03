@@ -30,8 +30,9 @@ $font-color: rgba(255, 255, 255, 0.6);
     img {
     max-width: 100%;
     }
+  }
 
-    & .overlay {
+     .collection-album-image-overlay {
       position: absolute;
       top: 0px;
       left: 0px;
@@ -40,7 +41,7 @@ $font-color: rgba(255, 255, 255, 0.6);
       background-color: rgba(0, 0, 0, 0.4);
       z-index: 10;
     }
-  }
+  
 
 .collection-overlay-content {
     position: absolute;

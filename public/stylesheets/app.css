@@ -85,14 +85,14 @@ td.song-number {
     position: relative; }
     .collection-album-container .collection-album-image-container img {
       max-width: 100%; }
-    .collection-album-container .collection-album-image-container .overlay {
-      position: absolute;
-      top: 0px;
-      left: 0px;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.4);
-      z-index: 10; }
+  .collection-album-container .collection-album-image-overlay {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 10; }
   .collection-album-container .collection-overlay-content {
     position: absolute;
     bottom: 20px;
@@ -321,6 +321,14 @@ body.landing .navbar {
 
 .player-header-nav {
   background-color: rgba(123, 70, 163, 0.9); }
+  .player-header-nav .navbar-nav a {
+    line-height: 45px;
+    color: white;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 1.2; }
+    .player-header-nav .navbar-nav a:hover {
+      color: rgba(123, 70, 163, 0.9); }
 
 
 /*# sourceMappingURL=app.css.map*/
