@@ -144,9 +144,16 @@ blocJams.controller('Landing.controller', ['$scope', function($scope) {
 
 blocJams.controller('PlayerBar.controller', ['$scope', 'SongPlayer', function($scope, SongPlayer) {
   $scope.songPlayer = SongPlayer;
+
+   SongPlayer.onTimeUpdate(function(event, time){
+     $scope.$apply(function(){
+       $scope.playTime = time;
+     });
+   });
+ 
 }]);
  
- blocJams.service('SongPlayer', function() {
+ blocJams.service('SongPlayer', ['$rootScope', function($rootScope) {
   var currentSoundFile = null;
   var trackIndex = function(album, song) {
     return album.songs.indexOf(song);
@@ -192,47 +199,56 @@ blocJams.controller('PlayerBar.controller', ['$scope', 'SongPlayer', function($s
        }
      },
 
+     onTimeUpdate: function(callback) {
+      return $rootScope.$on('sound:timeupdate', callback);
+     },
+
      setSong: function(album, song) {
       if (currentSoundFile) {
         currentSoundFile.stop();
       }
        this.currentAlbum = album;
        this.currentSong = song;
+
       currentSoundFile = new buzz.sound(song.audioUrl, {
         formats: [ "mp3" ],
         preload: true
     });
+      currentSoundFile.bind('timeupdate', function(e){
+        $rootScope.$broadcast('sound:timeupdate', this.getTime());
+      });
  
     this.play();
      }
    };
- });
+ }]);
 
  // ================= DIRECTIVE  ===============================
 
 blocJams.directive('slider', ['$document', function($document) {
-   // Returns a number between 0 and 1 to determine where the mouse event happened along the slider bar.
-   var calculateSliderPercentFromMouseEvent = function($slider, event) {
-     var offsetX =  event.pageX - $slider.offset().left; // Distance from left
-     var sliderWidth = $slider.width(); // Width of slider
-     var offsetXPercent = (offsetX  / sliderWidth);
-     offsetXPercent = Math.max(0, offsetXPercent);
-     offsetXPercent = Math.min(1, offsetXPercent);
-     return offsetXPercent;
-   };
 
-   var numberFromValue = function(value, defaultValue) {
+  var calculateSliderPercentFromMouseEvent = function($slider, event) {
+    var offsetX = event.pageX - $slider.offset().left;
+    var sliderWidth = $slider.width();
+    var offsetXPercent = (offsetX / sliderWidth);
+    offsetXPercent = Math.max(0,offsetXPercent);
+    offsetXPercent = Math.min(1, offsetXPercent);
+    return offsetXPercent;
+  };
+
+  var numberFromValue = function(value, defaultValue) {
     if (typeof value === 'number') {
       return value;
     }
-    if(typeof value === 'undefined') {
+
+    if (typeof value === 'undefined') {
       return defaultValue;
     }
-    if(typeof value === 'string') {
+
+    if (typeof value === 'string') {
       return Number(value);
     }
-   }
-
+  };
 
   return {
     templateUrl: '/templates/directives/slider.html',
@@ -240,12 +256,12 @@ blocJams.directive('slider', ['$document', function($document) {
     restrict: 'E',
     scope: {
       onChange: '&'
-    }, // Creates a scope that exists only in this directive.
+    },
     link: function(scope, element, attributes) {
-      // These values represent the progress into the song/volume bar,and its max value.
-      // For now, we're supplying arbitrary initial and max values.
+      
       scope.value = 0;
       scope.max = 100;
+
       var $seekBar = $(element);
 
       attributes.$observe('value', function(newValue) {
@@ -256,7 +272,8 @@ blocJams.directive('slider', ['$document', function($document) {
         scope.max = numberFromValue(newValue, 100) || 100;
       });
 
-      var percentString = function () {
+      var percentString = function() {
+        // percent = Number(scope.value) / Number(scope.max) * 100;
         var value = scope.value || 0;
         var max = scope.max || 100;
         percent = value / max * 100;
@@ -270,7 +287,7 @@ blocJams.directive('slider', ['$document', function($document) {
       scope.thumbStyle = function() {
         return {left: percentString()};
       };
-
+      
       scope.onClickSlider = function(event) {
         var percent = calculateSliderPercentFromMouseEvent($seekBar, event);
         scope.value = percent * scope.max;
@@ -279,50 +296,52 @@ blocJams.directive('slider', ['$document', function($document) {
 
       scope.trackThumb = function() {
         $document.bind('mousemove.thumb', function(event) {
-         var percent = calculateSliderPercentFromMouseEvent($seekBar, event);
-         scope.$apply(function() {
-           scope.value = percent * scope.max;
-           notifyCallback(scope.value);
+          var percent = calculateSliderPercentFromMouseEvent($seekBar, event);
+          scope.$apply(function() {
+            scope.value = percent * scope.max;
+            notifyCallback(scope.value);
+          });
         });
 
-       var notifyCallback = function(newValue) {
-         if(typeof scope.onChange === 'function') {
-           scope.onChange({value: newValue});
-         }
-       };
+        $document.bind('mouseup.thumb', function() {
+          $document.unbind('mousemove.thumb');
+          $document.unbind('mouseup.thumb');
+        });
+      };
 
-     });
-
-     //cleanup
-     $document.bind('mouseup.thumb', function() {
-       $document.unbind('mousemove.thumb');
-       $document.unbind('mouseup.thumb');
-     });   
+      var notifyCallback = function(newValue) {
+        if (typeof scope.onChange === 'function') {
+          scope.onChange({value: newValue});
+        }
+      };
+      
+    }
   };
-}
-
-};
-
 }]);
 
+blocJams.filter('timecode', function() {
+  return function(seconds) {
+    seconds = Number.parseFloat(seconds);
+
+    if (Number.isNaN(seconds)) {
+      return '-:--';
+    }
 
 
+    var wholeSeconds = Math.floor(seconds);
+    var minutes = Math.floor(wholeSeconds / 60);
+    var remainingSeconds = wholeSeconds % 60;
+
+    var output = minutes + ':';
+
+    if (remainingSeconds < 10) {
+      output += '0';
+    }
+
+    output += remainingSeconds;
+
+    return output;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  };
+});
